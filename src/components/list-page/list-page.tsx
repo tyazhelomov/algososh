@@ -305,7 +305,8 @@ export const ListPage: FC = () => {
   const addIndex = async () => {
     const config = {
       ...values,
-      index: undefined,
+      index: '',
+      text: '',
       circleElements: values.circleElements,
       isInputDisabled: true,
       isInputIndexDisabled: true,
@@ -486,7 +487,8 @@ export const ListPage: FC = () => {
   const deleteIndex = async () => {
     const config = {
       ...values,
-      index: undefined,
+      text: '',
+      index: '',
       circleElements: values.circleElements,
       isInputDisabled: true,
       isInputIndexDisabled: true,
