@@ -22,6 +22,15 @@
   height: 56px;
 }
 
+.linkBlock {
+  margin-left: 65px;
+  margin-top: 15px;
+}
+
+.link {
+  color: var(--default-color);
+}
+
 .letter {
   text-transform: uppercase;
 }
