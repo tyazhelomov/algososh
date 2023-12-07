@@ -1,8 +1,7 @@
 import { ChangeEvent, FormEvent, useState } from "react";
-import { IState } from "./hooks.types";
 
-export const useForm = <T extends IState>(inputValues: T) => {
-  const [values, setValues] = useState<IState>(inputValues);
+export const useForm = <T>(inputValues: T) => {
+  const [values, setValues] = useState<T>(inputValues);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement> | FormEvent<HTMLInputElement>): void => {
     const target = e.target as HTMLButtonElement;

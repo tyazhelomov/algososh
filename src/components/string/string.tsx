@@ -4,61 +4,59 @@ import { Input } from "../ui/input/input";
 import styles from "./string.module.css";
 import { Button } from "../ui/button/button";
 import { useForm } from "../../hooks/useForm";
-import { Circle } from "../ui/circle/circle";
+import { Circle, CircleProps } from "../ui/circle/circle";
 import { ElementStates } from "../../types/element-states";
 import { DELAY_IN_MS } from '../../constants/delays';
 import { sleep } from "../../utils/utils";
+import { getReversingString, reverseString } from "./utils";
+import { TCircleForm } from "../../hooks/useForm.types";
 
 export const StringComponent: React.FC = () => {
-  const { values, handleChange, setValues } = useForm({
+  const initValues: TCircleForm = {
     text: '',
     isButtonLoading: false,
     isInputDisabled: false,
     circleElements: [],
-  });
+  }
+  const { values, handleChange, setValues } = useForm(initValues);
 
   const isButtonDisabled = !values.text;
 
-  const startProcess = (e: FormEvent<HTMLFormElement>) => {
+  const process = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { text } = values;
-    const circleElements = text!.split('').map((el, index) => <Circle state={ElementStates.Default} letter={el} key={index} />);
+    const letters = getReversingString(values.text);
+    const config: TCircleForm = {
+      ...values,
+      isButtonLoading: true,
+      isInputDisabled: true,
+      circleElements: letters,
+    }
 
-    setValues({ text: '', isButtonLoading: true, isInputDisabled: true, circleElements })
+    for (let start = 0, end = config.circleElements.length - 1; start <= end; start++, end--) {
+      [config.circleElements[start].state, config.circleElements[end].state] = [ElementStates.Changing, ElementStates.Changing];
 
-    renderElements(circleElements);
-  }
-
-  const renderElements = async (circleElements: JSX.Element[]) => {
-    const { text } = values;
-
-    await sleep(DELAY_IN_MS);
-    for (let start = 0, end = circleElements!.length - 1; start <= end; start++, end--) {
-
-      const first = text![start];
-      const second = text![end];
-      circleElements![start] = <Circle state={ElementStates.Changing} letter={first} key={start} />;
-      circleElements![end] = <Circle state={ElementStates.Changing} letter={second} key={end} />;
-
-      setValues({ text: '', isButtonLoading: true, circleElements })
+      setValues({ ...config })
 
       await sleep(DELAY_IN_MS);
 
-      const firstDone = <Circle state={ElementStates.Modified} letter={first} key={start} />;
-      const secondDone = <Circle state={ElementStates.Modified} letter={second} key={end} />;
-      circleElements![start] = secondDone;
-      circleElements![end] = firstDone;
+      reverseString(config.circleElements, start, end);
+      [config.circleElements[start].state, config.circleElements[end].state] = [ElementStates.Modified, ElementStates.Modified];
 
-      setValues({ text: '', isButtonLoading: true, circleElements })
+      setValues({ ...config })
     }
 
-    setValues({ text: '', circleElements, isButtonLoading: false, isInputDisabled: false })
-  }
+    setValues({ ...config });
+
+    config.text = '';
+    config.isButtonLoading = false;
+    config.isInputDisabled = false;
+    setValues({ ...config });
+  };
 
   return (
     <SolutionLayout title="Строка">
       <div className={styles.block}>
-        <form className={styles.form} onSubmit={startProcess}>
+        <form className={styles.form} onSubmit={process}>
           <Input
             extraClass={styles.input}
             isLimitText = {true}
@@ -78,7 +76,9 @@ export const StringComponent: React.FC = () => {
         </form>
 
         <div className={styles.circles}>
-          { !!values.circleElements!.length && values.circleElements}
+          { values.circleElements.map((el: CircleProps) => {
+              return (<Circle letter={el.letter} state={el.state} key={crypto.randomUUID()}/>)
+          })}
         </div>
       </div>
     </SolutionLayout>

@@ -1,112 +1,45 @@
 import React from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
-import { getRandomNumber, sleep } from "../../utils/utils";
-import { SHORT_DELAY_IN_MS } from "../../constants/delays";
 import { useForm } from "../../hooks/useForm";
 import styles from './sorting-page.module.css';
 import { RadioInput } from "../ui/radio-input/radio-input";
 import { Button } from "../ui/button/button";
 import { Direction } from "../../types/direction";
-import { Column } from "../ui/column/column";
-import { Radio } from "../../hooks/hooks.types";
-import { ElementStates } from "../../types/element-states";
+import { Column, ColumnProps } from "../ui/column/column";
+import { Radio, TSortingForm } from "../../hooks/useForm.types";
+import { bubbleSorting, choiceSorting, createNewArray } from "./utils";
 
 export const SortingPage: React.FC = () => {
-  const { values, handleChange, setValues } = useForm({
+  const initValues: TSortingForm = {
     array: [],
     isButtonLoading: false,
     isButtonDisabled: false,
     isInputDisabled: false,
     radioInput: Radio.Choice,
-  });
-
-  const createNewArray = () => {
-    const minLength = 3;
-    const maxLength = 17;
-    const minNumber = 1;
-    const maxNumber = 100;
-    const volume = getRandomNumber(minLength, maxLength);
-    const array = Array(volume);
-
-    for (let i = 0; i < array.length; i++) {
-      array[i] = <Column index={getRandomNumber(minNumber, maxNumber)} key={i}/>;
-    }
-
-    setValues({ ...values, array })
-  }
-
-  const swap = (arr: JSX.Element[], firstIndex: number, secondIndex: number): void => {
-    const temp = arr[firstIndex];
-    arr[firstIndex] = arr[secondIndex];
-    arr[secondIndex] = <Column index={temp.props.index} key={temp.key} state={ElementStates.Modified}/>;
   };
-
-  const choiceSorting = async (type: string) => {
-    const arr = values.array!;
-    for (let i = 0; i <= arr.length - 1; i++) {
-      await sleep(SHORT_DELAY_IN_MS);
-      arr[i] = <Column index={arr[i].props.index} key={arr[i].key} state={ElementStates.Changing}/>;
-
-      setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-
-      let maxInd = i;
-      for (let j = i + 1; j <= arr.length - 1; j++) {
-        arr[j] = <Column index={arr[j].props.index} key={arr[j].key} state={ElementStates.Changing}/>;
-
-        setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-
-        if (type === Direction.Ascending && arr[j].props.index < arr[maxInd].props.index) {
-          maxInd = j;
-        } else if (type === Direction.Descending && arr[j].props.index > arr[maxInd].props.index) {
-          maxInd = j;
-        }
-        arr[j] = <Column index={arr[j].props.index} key={arr[j].key} state={ElementStates.Default}/>;
-        await sleep(SHORT_DELAY_IN_MS);
-      }
-
-      arr[i] = <Column index={arr[i].props.index} key={arr[i].key} state={ElementStates.Default}/>;
-      swap(arr, maxInd, i)
-      setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-    }
-  }
-
-  const bubbleSorting = async (type: string) => {
-    const arr = values.array!;
-    for (let i = 0; i < arr.length; i++) {
-      await sleep(SHORT_DELAY_IN_MS);
-      setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-
-      for (let j = 0; j < arr.length - i - 1; j++) {
-        arr[j] = <Column index={arr[j].props.index} key={arr[j].key} state={ElementStates.Changing}/>;
-        arr[j + 1] = <Column index={arr[j + 1].props.index} key={arr[j + 1].key} state={ElementStates.Changing}/>;
-
-        setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-        if (type === Direction.Ascending && arr[j].props.index > arr[j + 1].props.index) {
-          swap(arr, j + 1, j);
-        } else if (type === Direction.Descending && arr[j].props.index < arr[j + 1].props.index) {
-          swap(arr, j + 1, j);
-        }
-
-        await sleep(SHORT_DELAY_IN_MS);
-        arr[j] = <Column index={arr[j].props.index} key={arr[j].key} state={ElementStates.Default}/>;
-        arr[j + 1] = <Column index={arr[j + 1].props.index} key={arr[j + 1].key} state={ElementStates.Default}/>;
-      }
-      let lastIndex = arr.length - i - 1;
-      arr[lastIndex] = <Column index={arr[lastIndex].props.index} key={arr[lastIndex].key} state={ElementStates.Modified}/>;
-      setValues({ ...values, array: arr, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true  })
-    }
-  }
+  const { values, handleChange, setValues } = useForm(initValues);
 
   const startProcess = async (type: string) => {
-    setValues({ ...values, isButtonLoading: true, isButtonDisabled: true, isInputDisabled: true })
+    const config: TSortingForm = {
+      ...values,
+      isButtonLoading: true,
+      isButtonDisabled: true,
+      isInputDisabled: true,
+    };
+
+    setValues({ ...config })
 
     if (values.radioInput === Radio.Choice) {
-      await choiceSorting(type)
+      await choiceSorting(type, config, setValues);
     } else {
-      await bubbleSorting(type)
+      await bubbleSorting(type, config, setValues);
     }
 
-    setValues({ ...values, isButtonLoading: false, isButtonDisabled: false, isInputDisabled: false })
+    config.isButtonLoading = false;
+    config.isButtonDisabled = false;
+    config.isInputDisabled = false;
+
+    setValues({ ...config });
   }
 
   return (
@@ -137,12 +70,14 @@ export const SortingPage: React.FC = () => {
             text = 'Новый массив'
             type = "button"
             isLoader={values.isButtonLoading}
-            onClick={createNewArray}
+            onClick={() => createNewArray(values, setValues)}
           />
         </form>
 
         <div className={styles.columns}>
-          { !!values.array!.length && values.array}
+          { values.array.map((el: ColumnProps) => {
+              return (<Column state={el.state} index={el.index} key={crypto.randomUUID()}/>)
+          })}
         </div>
       </div>
     </SolutionLayout>

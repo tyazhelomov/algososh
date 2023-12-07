@@ -4,63 +4,84 @@ import { Input } from "../ui/input/input";
 import styles from "./stack-page.module.css";
 import { Button } from "../ui/button/button";
 import { useForm } from "../../hooks/useForm";
-import { Circle } from "../ui/circle/circle";
+import { Circle, CircleProps } from "../ui/circle/circle";
 import { ElementStates } from "../../types/element-states";
 import { SHORT_DELAY_IN_MS } from '../../constants/delays';
 import { sleep } from "../../utils/utils";
-import { nanoid } from "nanoid";
+import { TStackForm } from "../../hooks/useForm.types";
 
 export const StackPage: React.FC = () => {
-  const { values, handleChange, setValues } = useForm({
+  const initValues: TStackForm = {
     text: '',
     isButtonAddDisabled: false,
-    isButtonRemoveDisabled: false,
-    isButtonClearDisabled: false,
     isInputDisabled: false,
     circleElements: [],
-  });
+  }
+  const { values, handleChange, setValues } = useForm(initValues);
 
-  const isButtonAddDisabled = !values.text;
+  const isButtonAddDisabled = !values.text || values.isButtonAddDisabled;
+  const isInputDisabled = values.isInputDisabled;
   const isButtonRemoveDisabled = !values.circleElements!.length;
-  const isButtonClearDisabled = !values.circleElements!.length;
+  const isButtonClearDisabled = !values.circleElements.length;
 
   const addHead = async () => {
-    const id = nanoid();
-    values.circleElements!.push(<Circle state={ElementStates.Changing} head={'top'} letter={values.text} key={id} />)
-    setValues({ ...values, circleElements: values.circleElements, text: '', isInputDisabled: true,  })
-    const len = values.circleElements!.length - 1;
-    if (values.circleElements!.length > 1) {
-      const index = len - 1;
-      changeTop(values.circleElements!, index)
+    const config: TStackForm = {
+      ...values,
+      isButtonAddDisabled: true,
+      isInputDisabled: true,
     }
-    await sleep(SHORT_DELAY_IN_MS);
-    values.circleElements![len] = <Circle state={ElementStates.Default} head={'top'} letter={values.text} key={id} />;
-    setValues({ ...values, circleElements: values.circleElements, text: '', isInputDisabled: false,  })
-  }
 
-  const changeTop = (values: Array<JSX.Element>, index: number, isAddTop: boolean = false) => {
-    values[index] = <Circle state={ElementStates.Default} head={isAddTop ? 'top' : ''} letter={values[index].props.letter} key={values[index].key} />;
+    config.circleElements.push({ state: ElementStates.Changing, head: 'top', letter: values.text })
+    const len = config.circleElements.length;
+
+    if (len > 1) {
+      const index = len - 2;
+      config.circleElements[index].head = ''
+    }
+
+    setValues({ ...config })
+    await sleep(SHORT_DELAY_IN_MS);
+
+    config.circleElements[len - 1].state = ElementStates.Default;
+
+    config.text = '';
+    config.isButtonAddDisabled = false;
+    config.isInputDisabled = false;
+
+    setValues({ ...config })
   }
 
   const removeHead = async () => {
-    if (!values.circleElements!.length) {
-      return
+    const config: TStackForm = {
+      ...values,
+      isButtonAddDisabled: true,
+      isInputDisabled: true,
     }
-    setValues({ ...values, isButtonDisabled: true, isInputDisabled: true })
-    const len = values.circleElements!.length - 1;
+
+    setValues({ ...config });
+
+    const len = config.circleElements.length - 1;
+    config.circleElements[len].state = ElementStates.Changing;
+
+    setValues({ ...config });
+    await sleep(SHORT_DELAY_IN_MS);
+
     let index = len - 1;
     if (len < 2) {
       index = 0
     }
-    changeTop(values.circleElements!, index, true)
-    values.circleElements!.pop();
-    setValues({ ...values, circleElements: values.circleElements, isInputDisabled: false,  })
+
+    config.circleElements[index].head = 'top';
+    config.circleElements.pop();
+
+    config.text = '';
+    config.isButtonAddDisabled = false;
+    config.isInputDisabled = false;
+    setValues({ ...config })
   }
 
   const clear = async () => {
-    setValues({ ...values, isButtonDisabled: true, isInputDisabled: true })
-    values.circleElements = [];
-    setValues({ ...values, circleElements: values.circleElements, isInputDisabled: false,  })
+    setValues({ ...initValues })
   }
 
   return (
@@ -75,7 +96,7 @@ export const StackPage: React.FC = () => {
             value={values.text}
             name={'text'}
             type={'text'}
-            disabled={values.isInputDisabled}
+            disabled={isInputDisabled}
           />
           <Button 
             text = 'Добавить'
@@ -98,7 +119,9 @@ export const StackPage: React.FC = () => {
         </form>
 
         <div className={styles.circles}>
-          { !!values.circleElements!.length && values.circleElements}
+          { values.circleElements.map((el: CircleProps, index: number) => {
+              return (<Circle letter={el.letter} state={el.state} head={el.head} index={index} key={crypto.randomUUID()}/>)
+          })}
         </div>
       </div>
     </SolutionLayout>
