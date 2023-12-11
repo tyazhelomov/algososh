@@ -75,8 +75,12 @@ export const SortingPage: React.FC = () => {
         </form>
 
         <div className={styles.columns}>
-          { values.array.map((el: ColumnProps) => {
-              return (<Column state={el.state} index={el.index} key={crypto.randomUUID()}/>)
+          { values.array.map((el: ColumnProps, index: number) => {
+              return (
+                <li key={index}>
+                  <Column state={el.state} index={el.index} />
+                </li>
+              )
           })}
         </div>
       </div>

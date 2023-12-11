@@ -4,12 +4,16 @@ import { Input } from "../ui/input/input";
 import styles from "./list-page.module.css";
 import { Button } from "../ui/button/button";
 import { useForm } from "../../hooks/useForm";
-import { Circle } from "../ui/circle/circle";
-import { TExtendedCircleProps, TLinkedListForm, TSmallCircle } from "../../hooks/useForm.types";
-import { addHead, addIndex, addTail, deleteIndex, removeHead, removeTail } from "./utils";
+import { Circle, CircleProps } from "../ui/circle/circle";
+import { TLinkedListForm } from "../../hooks/useForm.types";
+import { LinkedList } from "./LinkedList";
+import { sleep } from "../../utils/utils";
+import { SHORT_DELAY_IN_MS } from "../../constants/delays";
+import { ElementStates } from "../../types/element-states";
+import { blockFields, unblockFields } from "./utils";
 
 export const ListPage: FC = () => {
-  const initValues: TLinkedListForm = {
+  const initValues: TLinkedListForm<CircleProps> = {
     text: '',
     index: '',
     isButtonAddHeadDisabled: false,
@@ -26,24 +30,192 @@ export const ListPage: FC = () => {
     isButtonRemoveIndexLoading: false,
     isInputDisabled: false,
     isInputIndexDisabled: false,
-    circleElements: [],
-    head: '',
-    tail: '',
+    circleElements: new LinkedList(),
+    circlesConfig: {},
   }
   const { values, handleChange, setValues } = useForm(initValues);
 
   const isButtonAddHeadDisabled = !values.text || values.isButtonAddHeadDisabled;
   const isButtonAddTailDisabled = !values.text || values.isButtonAddTailDisabled;
-  const isButtonRemoveHeadDisabled = values.isButtonRemoveHeadDisabled;
-  const isButtonRemoveTailDisabled = values.isButtonRemoveTailDisabled;
-  const isButtonAddIndexDisabled = !(!!values.index && !!values.text);
-  const isButtonRemoveIndexDisabled = !(!!values.index && !!values.circleElements!.length && !!(+values.index! < values.circleElements!.length) && !!(+values.index! >= 0));
+  const isButtonRemoveHeadDisabled = !values.circleElements.toArray().length || values.isButtonRemoveHeadDisabled;
+  const isButtonRemoveTailDisabled = !values.circleElements.toArray().length || values.isButtonRemoveTailDisabled;
+  const isButtonAddIndexDisabled = !values.index || !values.text || !(+values.index < values.circleElements.toArray().length) || !(+values.index >= 0);
+  const isButtonRemoveIndexDisabled = !(!!values.index && !!values.circleElements.toArray().length && !!(+values.index! < values.circleElements.toArray().length) && !!(+values.index! >= 0));
   const isButtonAddHeadLoading = values.isButtonAddHeadLoading;
   const isButtonAddTailLoading = values.isButtonAddTailLoading;
   const isButtonRemoveHeadLoading = values.isButtonRemoveHeadLoading;
   const isButtonRemoveTailLoading = values.isButtonRemoveTailLoading;
   const isButtonAddIndexLoading = values.isButtonAddIndexLoading;
   const isButtonRemoveIndexLoading = values.isButtonRemoveIndexLoading;
+
+  const addHead = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonAddHeadLoading');
+
+    if (config.circleElements.toArray().length) {
+      config.circlesConfig['0'] = {
+        head: {
+          state: ElementStates.Changing,
+          letter: config.text,
+        },
+      };
+    }
+
+    setValues({ ...config });
+    await sleep(SHORT_DELAY_IN_MS);
+
+    config.circleElements.prepend({ letter: config.text });
+
+    config.circlesConfig['0'] = {
+      state: ElementStates.Modified,
+    }
+  
+    setValues({ ...config });
+    await sleep(SHORT_DELAY_IN_MS);
+  
+    unblockFields(config, 'isButtonAddHeadLoading');
+    setValues({ ...config })
+  }
+  
+  const addTail = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonAddTailLoading');
+    const lastIndex = config.circleElements.toArray().length - 1;
+
+    if (lastIndex) {
+      config.circlesConfig[lastIndex] = {
+        head: {
+          state: ElementStates.Changing,
+          letter: config.text,
+        },
+      };
+    }
+
+    setValues({ ...config })
+    await sleep(SHORT_DELAY_IN_MS);
+
+    config.circleElements.append({ letter: config.text });
+
+    config.circlesConfig[lastIndex] = {};
+    config.circlesConfig[lastIndex + 1] = {
+      state: ElementStates.Modified,
+    }
+
+    setValues({ ...config });
+  
+    await sleep(SHORT_DELAY_IN_MS);
+
+    unblockFields(config, 'isButtonAddTailLoading');
+    setValues({ ...config })
+  }
+  
+  const removeHead = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonRemoveHeadLoading');
+    const len = config.circleElements.toArray().length;
+
+    if (len) {
+      config.circlesConfig['0'] = {
+        tail: {
+          state: ElementStates.Changing,
+          letter: (config.circleElements.toArray())[0].letter,
+        },
+      };
+    }
+
+    setValues({ ...config })
+    await sleep(SHORT_DELAY_IN_MS);
+    
+    config.circleElements.deleteHead();
+  
+    unblockFields(config, 'isButtonRemoveHeadLoading');
+    setValues({ ...config })
+  }
+  
+  const removeTail = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonRemoveTailLoading');
+    const lastIndex = config.circleElements.toArray().length - 1;
+
+    if (lastIndex) {
+      config.circlesConfig[lastIndex] = {
+        tail: {
+          state: ElementStates.Changing,
+          letter: (config.circleElements.toArray())[lastIndex].letter,
+        },
+      };
+    }
+
+    setValues({ ...config })
+    await sleep(SHORT_DELAY_IN_MS);
+
+    config.circleElements.deleteTail();
+    
+    unblockFields(config, 'isButtonRemoveTailLoading');
+    setValues({ ...config })
+  }
+  
+  const addIndex = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonAddIndexLoading');
+    setValues({ ...config })
+
+    for (let i = 0; i <= +config.index; i++) {
+      config.circlesConfig[i] = {
+        head: {
+          state: ElementStates.Changing,
+          letter: config.text,
+        }
+      }
+
+      setValues({ ...config });
+      await sleep(SHORT_DELAY_IN_MS);
+
+      config.circlesConfig[i] = {
+        state: ElementStates.Changing,
+      }
+    }
+
+    config.circleElements.addByIndex({ letter: config.text }, Number(config.index));
+    config.circlesConfig = {};
+
+    config.circlesConfig[config.index] = {
+      state: ElementStates.Modified,
+    }
+  
+    setValues({ ...config });
+    await sleep(SHORT_DELAY_IN_MS);
+
+    unblockFields(config, 'isButtonAddIndexLoading');
+    setValues({ ...config })
+  }
+  
+  const deleteIndex = async () => {
+    const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonRemoveIndexLoading');
+    setValues({ ...config })
+
+
+    for (let i = 0; i <= +config.index; i++) {
+      config.circlesConfig[i] = {
+        state: ElementStates.Changing
+      }
+
+      setValues({ ...config });
+      await sleep(SHORT_DELAY_IN_MS);
+    }
+
+    config.circlesConfig[config.index] = {
+      state: ElementStates.Changing,
+      tail: {
+        state: ElementStates.Changing,
+        letter: (config.circleElements.toArray())[+config.index].letter,
+      }
+    }
+    setValues({ ...config });
+    await sleep(SHORT_DELAY_IN_MS);
+
+    config.circleElements.deleteByIndex(Number(config.index));
+
+    unblockFields(config, 'isButtonRemoveIndexLoading');
+    setValues({ ...config });
+  }
+
+  const items = values.circleElements.toArray();
 
   return (
     <SolutionLayout title="Связный список">
@@ -67,28 +239,28 @@ export const ListPage: FC = () => {
                 type = "button"
                 disabled={isButtonAddHeadDisabled}
                 isLoader={isButtonAddHeadLoading}
-                onClick={() => addHead(values, setValues)}
+                onClick={addHead}
               />
               <Button 
                 text = 'Добавить в tail'
                 type = "button"
                 disabled={isButtonAddTailDisabled}
                 isLoader={isButtonAddTailLoading}
-                onClick={() => addTail(values, setValues)}
+                onClick={addTail}
               />
               <Button 
                 text = 'Удалить из head'
                 type = "button"
                 disabled={isButtonRemoveHeadDisabled}
                 isLoader={isButtonRemoveHeadLoading}
-                onClick={() => removeHead(values, setValues)}
+                onClick={removeHead}
               />
               <Button 
                 text = 'Удалить из tail'
                 type = "button"
                 disabled={isButtonRemoveTailDisabled}
                 isLoader={isButtonRemoveTailLoading}
-                onClick={() => removeTail(values, setValues)}
+                onClick={removeTail}
               />
             </div>
           </div>
@@ -109,7 +281,7 @@ export const ListPage: FC = () => {
                 type = "submit"
                 disabled={isButtonAddIndexDisabled}
                 isLoader={isButtonAddIndexLoading}
-                onClick={() => addIndex(values, setValues)}
+                onClick={addIndex}
               />
               <Button 
                 extraClass={styles.button}
@@ -117,28 +289,41 @@ export const ListPage: FC = () => {
                 type = "button"
                 disabled={isButtonRemoveIndexDisabled}
                 isLoader={isButtonRemoveIndexLoading}
-                onClick={() => deleteIndex(values, setValues)}
+                onClick={deleteIndex}
               />
             </div>
           </div>
         </div>
 
         <div className={styles.circles}>
-          { values.circleElements.map((el: TExtendedCircleProps, index: number) => {
-            let head = el.head as string | TSmallCircle | ReactElement | undefined;
-            let tail = el.tail as string | TSmallCircle | ReactElement | undefined;
-
-            if (head && typeof head !== 'string') {
-              head = head as TSmallCircle;
-              head = <Circle letter={head.letter} state={head.state} isSmall={true} key={crypto.randomUUID()}/>
-            }
-
-            if (tail && typeof tail !== 'string') {
-              tail = tail as TSmallCircle;
-              tail = <Circle letter={tail.letter} state={tail.state} isSmall={true} key={crypto.randomUUID()}/>
-            }
+          { items.map((el: CircleProps, index: number) => {
+            const config = values.circlesConfig[index];
+            let head: string | ReactElement = index === 0 ? 'head' : '';
             
-            return (<Circle letter={el.letter} isLinkedCircle={el.isLinkedCircle} state={el.state} head={head} tail={tail} index={index} key={crypto.randomUUID()}/>)
+            if (config?.head) {
+              head = <Circle state={config.head.state} letter={config.head.letter} isSmall={true} />
+            }
+
+            let tail: string | ReactElement = index === items.length - 1 ? 'tail' : '';
+            
+            if (config?.tail) {
+              tail = <Circle state={config.tail.state} letter={config.tail.letter} isSmall={true} />
+            }
+
+            const state = config?.state || ElementStates.Default;
+
+            return (
+              <li key={index}>
+                <Circle
+                  letter={typeof tail === 'string' ? el.letter : ''}
+                  state={state}
+                  head={head}
+                  tail={tail}
+                  index={index}
+                  isLinkedCircle={index < items.length - 1}
+                />
+              </li>
+            )
           })}
         </div>
       </div>

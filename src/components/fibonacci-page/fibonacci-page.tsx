@@ -1,6 +1,6 @@
 import React, { FormEvent } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
-import { Circle, CircleProps } from "../ui/circle/circle";
+import { Circle } from "../ui/circle/circle";
 import { useForm } from "../../hooks/useForm";
 import { sleep } from "../../utils/utils";
 import styles from './fibonacci-page.module.css';
@@ -47,7 +47,7 @@ export const FibonacciPage: React.FC = () => {
     }
 
     for (let i = 0; i < arr.length; i++) {
-      config.circleElements.push({ letter: String(arr[i]) });
+      config.circleElements.push(String(arr[i]));
 
       setValues({ ...config })
       await sleep(SHORT_DELAY_IN_MS);
@@ -81,11 +81,15 @@ export const FibonacciPage: React.FC = () => {
           />
         </form>
 
-        <div className={styles.circles}>
-          { values.circleElements.map((el: CircleProps, index: number) => {
-              return (<Circle letter={el.letter} state={el.state} index={index} key={crypto.randomUUID()}/>)
+        <ul className={styles.circles}>
+          { values.circleElements.map((el: string, index: number) => {
+              return (
+                <li key={index}>
+                  <Circle letter={el} index={index} />
+                </li>
+              )
           })}
-        </div>
+        </ul>
       </div>
     </SolutionLayout>
   );

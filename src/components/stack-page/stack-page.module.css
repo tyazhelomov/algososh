@@ -24,4 +24,5 @@
   flex-direction: row;
   gap: 16px;
   margin: auto;
+  list-style: none;
 }

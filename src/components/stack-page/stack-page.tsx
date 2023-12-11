@@ -4,85 +4,77 @@ import { Input } from "../ui/input/input";
 import styles from "./stack-page.module.css";
 import { Button } from "../ui/button/button";
 import { useForm } from "../../hooks/useForm";
-import { Circle, CircleProps } from "../ui/circle/circle";
+import { Circle } from "../ui/circle/circle";
 import { ElementStates } from "../../types/element-states";
 import { SHORT_DELAY_IN_MS } from '../../constants/delays';
 import { sleep } from "../../utils/utils";
 import { TStackForm } from "../../hooks/useForm.types";
+import { Stack } from "./Stack";
 
 export const StackPage: React.FC = () => {
-  const initValues: TStackForm = {
+  const initValues: TStackForm<string> = {
     text: '',
     isButtonAddDisabled: false,
     isInputDisabled: false,
-    circleElements: [],
+    circleElements: new Stack(),
+    currentIndex: -1,
   }
   const { values, handleChange, setValues } = useForm(initValues);
 
   const isButtonAddDisabled = !values.text || values.isButtonAddDisabled;
   const isInputDisabled = values.isInputDisabled;
-  const isButtonRemoveDisabled = !values.circleElements!.length;
-  const isButtonClearDisabled = !values.circleElements.length;
+  const isButtonRemoveDisabled = !values.circleElements.size;
+  const isButtonClearDisabled = !values.circleElements.size;
 
   const addHead = async () => {
-    const config: TStackForm = {
+    const config: TStackForm<string> = {
       ...values,
       isButtonAddDisabled: true,
       isInputDisabled: true,
     }
 
-    config.circleElements.push({ state: ElementStates.Changing, head: 'top', letter: values.text })
-    const len = config.circleElements.length;
-
-    if (len > 1) {
-      const index = len - 2;
-      config.circleElements[index].head = ''
-    }
+    config.circleElements.push(values.text)
+    config.currentIndex = config.circleElements.size - 1;
 
     setValues({ ...config })
     await sleep(SHORT_DELAY_IN_MS);
 
-    config.circleElements[len - 1].state = ElementStates.Default;
 
     config.text = '';
     config.isButtonAddDisabled = false;
     config.isInputDisabled = false;
+    config.currentIndex = -1;
 
     setValues({ ...config })
   }
 
   const removeHead = async () => {
-    const config: TStackForm = {
+    const config: TStackForm<string> = {
       ...values,
       isButtonAddDisabled: true,
       isInputDisabled: true,
     }
 
-    setValues({ ...config });
-
-    const len = config.circleElements.length - 1;
-    config.circleElements[len].state = ElementStates.Changing;
+    config.currentIndex = config.circleElements.size - 1;
 
     setValues({ ...config });
     await sleep(SHORT_DELAY_IN_MS);
 
-    let index = len - 1;
-    if (len < 2) {
-      index = 0
-    }
-
-    config.circleElements[index].head = 'top';
     config.circleElements.pop();
 
     config.text = '';
     config.isButtonAddDisabled = false;
     config.isInputDisabled = false;
+    config.currentIndex = -1;
     setValues({ ...config })
   }
 
   const clear = async () => {
-    setValues({ ...initValues })
+    values.circleElements.clear();
+    setValues({ ...values })
   }
+
+  const items = values.circleElements.items;
 
   return (
     <SolutionLayout title="Стек">
@@ -119,8 +111,20 @@ export const StackPage: React.FC = () => {
         </form>
 
         <div className={styles.circles}>
-          { values.circleElements.map((el: CircleProps, index: number) => {
-              return (<Circle letter={el.letter} state={el.state} head={el.head} index={index} key={crypto.randomUUID()}/>)
+          { items.map((el: string, index: number) => {
+            const head = index === values.circleElements.size - 1 ? 'head' : '';
+            const state = values.currentIndex === index ? ElementStates.Changing : ElementStates.Default;
+
+            return (
+              <li key={index}>
+                <Circle
+                  letter={el}
+                  state={state}
+                  head={head}
+                  index={index}
+                />
+              </li>
+            )
           })}
         </div>
       </div>

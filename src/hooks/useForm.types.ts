@@ -2,6 +2,9 @@ import { ReactElement } from "react";
 import { CircleProps } from "../components/ui/circle/circle";
 import { ColumnProps } from "../components/ui/column/column";
 import { ElementStates } from "../types/element-states";
+import { IStack } from "../components/stack-page/Stack";
+import { IQueue } from "../components/queue-page/Queue";
+import { ILinkedList } from "../components/list-page/LinkedList";
 
 export enum Radio {
   Choice = 'choice',
@@ -28,22 +31,27 @@ export type TCircleForm = IBaseForm & {
   isInputDisabled: boolean;
 }
 
-export type TFibonacciForm =  Omit<TCircleForm, 'text'> & {
+export type TFibonacciForm = {
+  circleElements: Array<string>;
+  isButtonLoading: boolean;
+  isInputDisabled: boolean;
   number: number;
 }
 
-export type TStackForm = IBaseForm & {
+export type TStackForm<T> = Omit<IBaseForm, 'circleElements'> & {
+  circleElements: IStack<T>,
   isButtonAddDisabled: boolean;
   isInputDisabled: boolean;
+  currentIndex: number;
 }
 
-export type TQueueForm = IBaseForm & {
-  isButtonAddDisabled: boolean,
-  isButtonRemoveDisabled: boolean,
-  isButtonClearDisabled: boolean,
-  isInputDisabled: boolean,
-  head: number,
-  tail: number,
+export type TQueueForm<T> = Omit<IBaseForm, 'circleElements'> & {
+  circleElements: IQueue<T>;
+  isButtonAddDisabled: boolean;
+  isButtonRemoveDisabled: boolean;
+  isButtonClearDisabled: boolean;
+  isInputDisabled: boolean;
+  currentIndex: number;
 }
 
 export type TSortingForm = Omit<TCircleForm, 'circleElements' | 'text'> & {
@@ -52,9 +60,9 @@ export type TSortingForm = Omit<TCircleForm, 'circleElements' | 'text'> & {
   radioInput: Radio;
 }
 
-export type TLinkedListForm = {
+export type TLinkedListForm<T> = {
   text: string;
-  circleElements: Array<TExtendedCircleProps>;
+  circleElements: ILinkedList<T>;
   index: string;
   isButtonAddHeadDisabled: boolean;
   isButtonAddTailDisabled: boolean;
@@ -70,6 +78,11 @@ export type TLinkedListForm = {
   isButtonRemoveIndexLoading: boolean;
   isInputDisabled: boolean;
   isInputIndexDisabled: boolean;
-  head: string;
-  tail: string;
+  circlesConfig: {
+    [name: string]: {
+      head?: CircleProps;
+      tail?: CircleProps;
+      state?: ElementStates;
+    }
+  };
 }

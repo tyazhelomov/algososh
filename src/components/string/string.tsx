@@ -76,8 +76,12 @@ export const StringComponent: React.FC = () => {
         </form>
 
         <div className={styles.circles}>
-          { values.circleElements.map((el: CircleProps) => {
-              return (<Circle letter={el.letter} state={el.state} key={crypto.randomUUID()}/>)
+          { values.circleElements.map((el: CircleProps, index: number) => {
+              return (
+                <li key={index}>
+                  <Circle letter={el.letter} state={el.state} />
+                </li>
+              )
           })}
         </div>
       </div>
