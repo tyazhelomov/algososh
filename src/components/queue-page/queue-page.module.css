@@ -1,0 +1,28 @@
+.form {
+  display: flex;
+  flex-direction: row;
+  margin: 0 auto;
+  min-width: 630px;
+  gap: 12px;
+}
+
+.input {
+  min-width: 377px;
+}
+
+.block {
+  min-width: 630px;
+  max-height: 286px;
+  display: flex;
+  flex-direction: column;
+  gap: 120px;
+  margin: 0 auto;
+}
+
+.circles {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  margin: auto;
+  list-style: none;
+}

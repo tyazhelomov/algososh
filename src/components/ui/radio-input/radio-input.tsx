@@ -1,5 +1,4 @@
 import React from "react";
-import { nanoid } from "nanoid";
 import styles from "./radio-input.module.css";
 
 interface RadioProps extends React.HTMLProps<HTMLInputElement> {
@@ -12,7 +11,7 @@ export const RadioInput: React.FC<RadioProps> = ({
   extraClass = "",
   ...rest
 }) => {
-  const id = nanoid();
+  const id = crypto.randomUUID();
 
   return (
     <div className={`${styles.content} ${extraClass}`}>

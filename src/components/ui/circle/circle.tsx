@@ -2,7 +2,7 @@ import React from "react";
 import styles from "./circle.module.css";
 import { ElementStates } from "../../../types/element-states";
 
-interface CircleProps {
+export interface CircleProps {
   state?: ElementStates;
   letter?: string;
   head?: string | React.ReactElement | null;
@@ -11,6 +11,7 @@ interface CircleProps {
   tailType?: "string" | "element";
   extraClass?: string;
   isSmall?: boolean;
+  isLinkedCircle?: boolean;
 }
 
 export const Circle: React.FC<CircleProps> = ({
@@ -21,6 +22,7 @@ export const Circle: React.FC<CircleProps> = ({
   tail,
   extraClass = "",
   isSmall,
+  isLinkedCircle = false,
 }) => {
   return (
     <div className={`${styles.content} ${extraClass}`}>
@@ -44,6 +46,13 @@ export const Circle: React.FC<CircleProps> = ({
           {letter}
         </p>
       </div>
+      {isLinkedCircle && (
+        <div className={`${isLinkedCircle ? `${styles.absolute} ${styles.linkBlock}` : ""}`} >
+          <p className={`${styles.link}`} >
+            {'>'}
+          </p>
+        </div>
+      )}
       <p
         className={`text text_type_input text_color_input mt-4 ${styles.absolute} ${styles.index}`}
       >
