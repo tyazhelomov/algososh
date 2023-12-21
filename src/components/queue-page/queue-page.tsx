@@ -10,6 +10,7 @@ import { Queue } from "./Queue";
 import { sleep } from "../../utils/utils";
 import { SHORT_DELAY_IN_MS } from "../../constants/delays";
 import { ElementStates } from "../../types/element-states";
+import React from "react";
 
 export const QueuePage: FC = () => {
   const initValues: TQueueForm<string> = {

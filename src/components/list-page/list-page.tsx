@@ -11,6 +11,7 @@ import { sleep } from "../../utils/utils";
 import { SHORT_DELAY_IN_MS } from "../../constants/delays";
 import { ElementStates } from "../../types/element-states";
 import { blockFields, unblockFields } from "./utils";
+import React from "react";
 
 export const ListPage: FC = () => {
   const initValues: TLinkedListForm<CircleProps> = {
@@ -133,14 +134,12 @@ export const ListPage: FC = () => {
     const config: TLinkedListForm<CircleProps> = blockFields(values, 'isButtonRemoveTailLoading');
     const lastIndex = config.circleElements.toArray().length - 1;
 
-    if (lastIndex) {
-      config.circlesConfig[lastIndex] = {
-        tail: {
-          state: ElementStates.Changing,
-          letter: (config.circleElements.toArray())[lastIndex].letter,
-        },
-      };
-    }
+    config.circlesConfig[lastIndex] = {
+      tail: {
+        state: ElementStates.Changing,
+        letter: (config.circleElements.toArray())[lastIndex].letter,
+      },
+    };
 
     setValues({ ...config })
     await sleep(SHORT_DELAY_IN_MS);
